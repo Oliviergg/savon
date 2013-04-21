@@ -63,11 +63,19 @@ module Savon
     end
 
     def call!(request)
-      log_request(request) if log?
-      response = HTTPI.post(request)
-      log_response(response) if log?
-
-      response
+      cached_response = nil
+      cached_response = @globals[:soap_cache].get(request) if @globals[:soap_cache_enabled]
+      if cached_response.nil?
+        log_request(request) if log?
+        response = HTTPI.post(request)
+        @globals[:soap_cache].set(request,response) if @globals[:soap_cache_enabled]
+        log_response(response) if log?
+        response
+      else
+        log_request_form_cache(request) if log?
+        cached_response=JSON.parse(cached_response)
+        HTTPI::Response.new(cached_response["code"],cached_response["headers"],cached_response["raw_body"])
+      end
     end
 
     def build_request(builder)
@@ -107,6 +115,13 @@ module Savon
       logger.info  headers_to_log(request.headers)
       logger.debug body_to_log(request.body)
     end
+
+    def log_request_form_cache(request)
+      logger.info  "SOAP request: #{request.url} from cache"
+      logger.info  headers_to_log(request.headers)
+      logger.debug body_to_log(request.body)
+    end
+
 
     def log_response(response)
       logger.info  "SOAP response (status #{response.code})"

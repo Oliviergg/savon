@@ -53,7 +53,9 @@ module Savon
         :pretty_print_xml          => false,
         :raise_errors              => true,
         :strip_namespaces          => true,
-        :convert_response_tags_to  => lambda { |tag| tag.snakecase.to_sym }
+        :convert_response_tags_to  => lambda { |tag| tag.snakecase.to_sym },
+        :soap_cache_enabled        => false,
+        :soap_cache                => nil
       }
 
       options = defaults.merge(options)
@@ -246,6 +248,16 @@ module Savon
     def convert_response_tags_to(converter = nil, &block)
       @options[:convert_response_tags_to] = block || converter
     end
+    
+    def soap_cache_enabled(enabled)
+      @options[:soap_cache_enabled]=enabled
+    end
+
+    def soap_cache(cache)
+      @options[:soap_cache]=cache
+    end
+
+    
   end
 
   class LocalOptions < Options
